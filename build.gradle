@@ -1,0 +1,62 @@
+plugins {
+    alias(libs.plugins.gmp) apply false
+}
+
+subprojects { 
+    if (it.name != 'gradle') {
+        apply plugin: 'java-library'
+        apply plugin: libs.plugins.gmp.get().pluginId
+    } else {
+        apply plugin: 'java-gradle-plugin'
+    }
+    apply plugin: 'maven-publish'
+    apply plugin: 'idea'
+
+    java.toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+        vendor = JvmVendorSpec.ADOPTIUM
+    }
+
+    java.withSourcesJar()
+
+    idea.module.downloadSources = true
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        compileOnly libs.annotations
+        testCompileOnly libs.annotations
+        testImplementation libs.jupiter
+        testRuntimeOnly libs.jupiterRuntime
+    }
+
+    tasks.named('test') {
+        useJUnitPlatform()
+    }
+
+    tasks.withType(Jar).configureEach {
+        from(rootProject.file('LICENSE')) {
+            into 'META-INF/'
+        }
+    }
+
+    publishing {
+        if (project.name != 'gradle') {
+            publications {
+                mavenJava(MavenPublication) {
+                    from components.java
+                }
+            }
+        }
+
+        repositories {
+            maven {
+                name 'tuxtown'
+                url 'https://maven.tuxtown.eu/release'
+                credentials(PasswordCredentials)
+            }
+        }
+    }
+}

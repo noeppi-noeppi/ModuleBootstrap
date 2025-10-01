@@ -1,0 +1,12 @@
+dependencies {
+    api project(':spi')
+}
+
+gradlePlugin {
+    plugins {
+        bootstrap {
+            id = 'eu.tuxtown.bootstrap.gradle'
+            implementationClass = 'bootstrap.gradle.BootstrapGradlePlugin'
+        }
+    }
+}

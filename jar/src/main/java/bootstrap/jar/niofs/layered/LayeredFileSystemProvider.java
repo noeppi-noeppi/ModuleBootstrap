@@ -1,0 +1,207 @@
+package bootstrap.jar.niofs.layered;
+
+import bootstrap.jar.niofs.path.BasePath;
+import bootstrap.jar.niofs.path.CompoundUriHelper;
+import bootstrap.jar.niofs.path.DefaultFileSystem;
+import bootstrap.jar.niofs.path.ReadOnlyFileSystemProvider;
+import org.jetbrains.annotations.NotNullByDefault;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttribute;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
+
+@NotNullByDefault
+public class LayeredFileSystemProvider extends ReadOnlyFileSystemProvider {
+
+    private final Object lock;
+    private final Map<List<String>, LayeredFileSystem> fileSystems;
+
+    public LayeredFileSystemProvider() {
+        this.lock = new Object();
+        this.fileSystems = new HashMap<>();
+    }
+
+    @Override
+    public String getScheme() {
+        return "layered";
+    }
+
+    @Override
+    public Path getPath(URI uri) {
+        CompoundUriHelper.DeconstructedPath dec = CompoundUriHelper.deconstruct(this.getScheme(), uri);
+        try {
+            boolean isAnonymous = !dec.components().isEmpty() && dec.components().getFirst().isEmpty();
+            return this.getOrCreateFileSystem(dec.components(), true, !isAnonymous).getPath(dec.path());
+        } catch (IOException e) {
+            throw this.mask(dec.components(), e);
+        }
+    }
+
+    @Override
+    public URI toURI(BasePath path) throws URISyntaxException {
+        if (path.getFileSystem() instanceof LayeredFileSystem lfs) {
+            return CompoundUriHelper.construct(this.getScheme(), new CompoundUriHelper.DeconstructedPath(lfs.layers(), path.toString()));
+        } else {
+            throw new IllegalStateException("Wrong kind of path.");
+        }
+    }
+
+    @Override
+    public FileSystem newFileSystem(URI uri, @Nullable Map<String, ?> env) throws IOException {
+        CompoundUriHelper.DeconstructedPath dec = CompoundUriHelper.deconstruct(this.getScheme(), uri);
+        return this.getOrCreateFileSystem(dec.components(), false, true);
+    }
+
+    @Override
+    public FileSystem getFileSystem(URI uri) {
+        CompoundUriHelper.DeconstructedPath dec = CompoundUriHelper.deconstruct(this.getScheme(), uri);
+        try {
+            return this.getOrCreateFileSystem(dec.components(), true, false);
+        } catch (IOException e) {
+            throw this.mask(dec.components(), e);
+        }
+    }
+
+    @Override
+    public void unregisterFileSystem(FileSystem fs) {
+        synchronized (this.lock) {
+            if (fs instanceof LayeredFileSystem lfs) {
+                //noinspection resource
+                this.fileSystems.remove(lfs.layers());
+            }
+        }
+    }
+
+    LayeredFileSystem getOrCreateFileSystem(List<String> layers, boolean existing, boolean create) throws IOException {
+        layers = List.copyOf(layers);
+        synchronized (this.lock) {
+            LayeredFileSystem existingFileSystem = this.fileSystems.get(layers);
+            if (existingFileSystem != null) {
+                if (existing) return existingFileSystem;
+                throw new FileSystemAlreadyExistsException(this.fsError(layers));
+            }
+            if (!create) {
+                throw new FileSystemNotFoundException(this.fsError(layers));
+            }
+        }
+        LayeredFileSystem newFS;
+        try {
+            newFS = new LayeredFileSystem(this, layers);
+        } catch (IOException e) {
+            throw new IOException(this.fsError(layers), e);
+        }
+        synchronized (this.lock) {
+            // If another filesystem with the same key was created while the lock was released, discard the previous file system.
+            LayeredFileSystem existingFileSystem = this.fileSystems.get(newFS.layers());
+            if (existingFileSystem != null) {
+                // Do not close the new filesystem as it has not yet been added to the filesystem list.
+                return existingFileSystem;
+            }
+            this.fileSystems.put(newFS.layers(), newFS);
+            return newFS;
+        }
+    }
+
+    private String fsError(List<String> roots) {
+        return this.getScheme() + ":" + roots.stream().map(part -> URLEncoder.encode(part, StandardCharsets.UTF_8)).collect(Collectors.joining(":"));
+    }
+
+    private FileSystemNotFoundException mask(List<String> roots, IOException e) {
+        FileSystemNotFoundException ex = new FileSystemNotFoundException(this.fsError(roots));
+        ex.initCause(e);
+        throw ex;
+    }
+
+    private Path upstreamPath(Path localPath) throws NoSuchFileException {
+        if (localPath.getFileSystem() instanceof LayeredFileSystem lfs) {
+            return lfs.upstreamFileSystem().getPath(localPath.normalize().toString());
+        } else {
+            throw new NoSuchFileException(localPath.toString());
+        }
+    }
+
+    @Override
+    public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
+        for (OpenOption option : options) {
+            if (option != StandardOpenOption.READ) throw new UnsupportedOperationException("Unsupported OpenOption: " + option);
+        }
+        return Files.newByteChannel(this.upstreamPath(path), options);
+    }
+
+    @Override
+    public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
+        Set<Path> localPaths = new TreeSet<>();
+
+        Path upstream = this.upstreamPath(dir);
+        if (!Files.isDirectory(upstream)) throw new NotDirectoryException(dir.toString());
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(upstream, filter)) {
+            StreamSupport.stream(dirStream.spliterator(), false)
+                    .map(upstream::relativize)
+                    .map(rel -> dir.resolve(dir.getFileSystem().getPath(
+                            IntStream.range(0, rel.getNameCount())
+                                    .mapToObj(rel::getName)
+                                    .map(Path::toString)
+                                    .collect(Collectors.joining(dir.getFileSystem().getSeparator()))
+                    )))
+                    .forEach(localPaths::add);
+        }
+
+        return new DefaultFileSystem.SimpleDirectoryStream(localPaths, filter);
+    }
+
+    @Override
+    public boolean exists(Path path, LinkOption... options) {
+        try {
+            return Files.exists(this.upstreamPath(path), options);
+        } catch (NoSuchFileException e) {
+            return false;
+        }
+    }
+
+    @Override
+    public void checkAccess(Path path, AccessMode... modes) throws IOException {
+        for (AccessMode mode : modes) {
+            if (mode == AccessMode.WRITE || mode == AccessMode.EXECUTE) {
+                throw new AccessDeniedException(path.toString());
+            }
+        }
+        Path upstream = this.upstreamPath(path);
+        upstream.getFileSystem().provider().checkAccess(upstream, modes);
+    }
+
+    @Override
+    public boolean isSameFile(Path path1, Path path2) throws IOException {
+        if (Objects.equals(path1, path2)) return true;
+        try {
+            Path upstream1 = this.upstreamPath(path1);
+            Path upstream2 = this.upstreamPath(path2);
+            if (upstream1.getFileSystem().provider() != upstream2.getFileSystem().provider()) {
+                return false;
+            }
+            return Files.isSameFile(upstream1, upstream2);
+        } catch (NoSuchFileException e) {
+            return false;
+        }
+    }
+
+    @Override
+    public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
+        if (type == BasicFileAttributes.class) {
+            Path upstream = this.upstreamPath(path);
+            return Files.readAttributes(upstream, type);
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+}

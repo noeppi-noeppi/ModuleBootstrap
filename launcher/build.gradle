@@ -1,0 +1,45 @@
+apply plugin: 'application'
+
+sourceSets {
+    legacy { compileClasspath = project.files() }
+}
+
+dependencies {
+    api project(':spi')
+    api project(':jar')
+}
+
+application {
+    mainModule = 'bootstrap.launcher'
+    mainClass = 'bootstrap.launcher.Main'
+}
+
+jar {
+    from sourceSets.legacy.output
+    manifest {
+        attributes('Main-Class': application.mainClass.get())
+    }
+}
+
+sourcesJar {
+    from sourceSets.legacy.allSource
+}
+
+run {
+    dependsOn(project(':entrypoint').tasks.named("jar"))
+    systemProperty 'bootstrap.classpath', files(project(':entrypoint').jar.archiveFile).asPath
+    jvmArgs += ['--add-opens', 'java.base/java.lang.invoke=bootstrap.jar']
+}
+
+tasks.register("runLegacy", JavaExec) {
+    dependsOn(tasks.named("jar"))
+    dependsOn(project(':entrypoint').tasks.named("jar"))
+    mainClass = application.mainClass
+    mainModule = null
+    modularity.inferModulePath = false
+    classpath configurations.runtimeClasspath
+    classpath jar.archiveFile
+    classpath project(':entrypoint').jar.archiveFile
+    systemProperty 'java.system.class.loader', 'bootstrap.launcher.LegacyLauncher'
+    jvmArgs += ['--add-opens', 'java.base/java.lang=ALL-UNNAMED']
+}
