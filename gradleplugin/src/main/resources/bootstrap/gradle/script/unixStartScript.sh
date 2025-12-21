@@ -1,5 +1,6 @@
 #!/bin/sh
 
+OLD_POSIXLY_CORRECT="${POSIXLY_CORRECT}"
 export POSIXLY_CORRECT=1
 # shellcheck disable=SC3040
 (set +o | grep -q posix) && set -o posix
@@ -46,5 +47,11 @@ if [ -f "${APP_HOME}/conf/jvm_args.txt" ]; then
   set -- "@${APP_HOME}/conf/jvm_args.txt" "$@"
 fi
 set -- "--module-path" @@@MODULE_PATH@@@ "--add-modules" "ALL-DEFAULT" "--add-modules" "ALL-MODULE-PATH" @@@JVM_ARGS@@@ "$@"
+
+POSIXLY_CORRECT="${OLD_POSIXLY_CORRECT}"
+if [ -z "${POSIXLY_CORRECT}" ]; then
+  unset POSIXLY_CORRECT
+fi
+export POSIXLY_CORRECT
 
 exec "${JAVA_CMD}" "$@"
