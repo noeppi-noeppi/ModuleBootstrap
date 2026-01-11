@@ -58,7 +58,7 @@ public class BootstrapGradlePlugin implements Plugin<Project> {
             task.setGroup("application");
             task.setDestinationDir(project.getLayout().getBuildDirectory().dir(task.getName()).get().getAsFile());
         });
-        project.getGradle().projectsEvaluated(g -> appHomeTask.configure(task -> bootstrapExt.configureCopySpec(task.getRootSpec())));
+        project.afterEvaluate(_ -> appHomeTask.configure(task -> bootstrapExt.configureCopySpec(task.getRootSpec())));
         
         TaskProvider<JavaExec> runTask = project.getTasks().register(ApplicationPlugin.TASK_RUN_NAME, JavaExec.class, task -> {
             task.setGroup("application");
@@ -76,7 +76,7 @@ public class BootstrapGradlePlugin implements Plugin<Project> {
             task.getJavaLauncher().convention(toolchainExt.launcherFor(javaExt.getToolchain()));
         });
 
-        project.getGradle().projectsEvaluated(g -> runTask.configure(task -> {
+        project.afterEvaluate(_ -> runTask.configure(task -> {
             task.systemProperty(LauncherConstants.PROP_CLASSPATH, bootstrapClasspath.map(FileCollection::getAsPath).get());
             task.systemProperty(LauncherConstants.PROP_HOME, appHomeTask.get().getDestinationDir().toPath().toAbsolutePath().toString());
             if (bootstrapExt.getEntrypoint().isPresent()) {
@@ -98,7 +98,7 @@ public class BootstrapGradlePlugin implements Plugin<Project> {
             task.setWindowsStartScriptGenerator(new BootstrapScriptGenerator(true, bootstrapExt, bootstrapClasspath));
         });
 
-        project.getGradle().projectsEvaluated(g -> startScriptsTask.configure(task -> {
+        project.afterEvaluate(_ -> startScriptsTask.configure(task -> {
             task.setApplicationName(bootstrapExt.getApplicationName().get());
             task.setDefaultJvmOpts(bootstrapExt.getJvmArgs().get());
         }));
@@ -126,6 +126,6 @@ public class BootstrapGradlePlugin implements Plugin<Project> {
 
         distribution.getContents().with(binarySpec, bootModulesSpec, bootstrapClasspathSpec);
 
-        project.getGradle().projectsEvaluated(g -> bootstrapExt.configureCopySpec(distribution.getContents()));
+        project.getGradle().projectsEvaluated(_ -> bootstrapExt.configureCopySpec(distribution.getContents()));
     }
 }
