@@ -13,7 +13,7 @@ subprojects {
     apply plugin: 'idea'
 
     java.toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
         vendor = JvmVendorSpec.ADOPTIUM
     }
 
@@ -29,10 +29,11 @@ subprojects {
         compileOnly libs.annotations
         testCompileOnly libs.annotations
         testImplementation libs.jupiter
-        testRuntimeOnly libs.jupiterRuntime
+        testImplementation libs.jupiter.engine
+        testRuntimeOnly libs.jupiter.launcher
     }
 
-    tasks.named('test') {
+    tasks.named('test', Test) {
         useJUnitPlatform()
     }
 

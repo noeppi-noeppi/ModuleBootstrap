@@ -1,0 +1,3 @@
+tasks.named('test', Test) {
+    jvmArgs += ['--add-opens', 'java.base/java.lang.invoke=bootstrap.jar']
+}

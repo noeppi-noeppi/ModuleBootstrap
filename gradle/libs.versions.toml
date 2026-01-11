@@ -1,7 +1,7 @@
 [versions]
-gmp = '1.8.15'
+gmp = '2.0.0'
 annotations = '26.0.2'
-jupiter = '5.12.1'
+jupiter = '6.0.2'
 
 [plugins]
 gmp = { id = 'org.javamodularity.moduleplugin', version.ref = 'gmp' }
@@ -9,4 +9,5 @@ gmp = { id = 'org.javamodularity.moduleplugin', version.ref = 'gmp' }
 [libraries]
 annotations = { module = 'org.jetbrains:annotations', version.ref = 'annotations' }
 jupiter = { module = 'org.junit.jupiter:junit-jupiter', version.ref = 'jupiter' }
-jupiterRuntime = { module = 'org.junit.platform:junit-platform-launcher' }
+jupiter-engine = { module = 'org.junit.jupiter:junit-jupiter-engine', version.ref = 'jupiter' }
+jupiter-launcher = { module = 'org.junit.platform:junit-platform-launcher', version.ref = 'jupiter' }
