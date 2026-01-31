@@ -43,7 +43,8 @@ public class BootstrapExtension extends GroovyObjectSupport {
         this.entrypoint = objectFactory.property(String.class);
         this.bootModules = objectFactory.property(Configuration.class);
         this.bootstrapClasspath = objectFactory.property(Configuration.class);
-        this.jvmArgs = objectFactory.listProperty(String.class).convention(providerFactory.provider(() -> List.of(
+        this.jvmArgs = objectFactory.listProperty(String.class);
+        this.jvmArgs.set(providerFactory.provider(() -> List.of(
                 "--add-opens", "java.base/java.lang.invoke=" + LauncherConstants.MODULE_JAR
         )));
         this.resources = new ArrayList<>();

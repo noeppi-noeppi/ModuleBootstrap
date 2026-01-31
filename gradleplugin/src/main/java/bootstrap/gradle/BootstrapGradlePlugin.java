@@ -68,7 +68,7 @@ public class BootstrapGradlePlugin implements Plugin<Project> {
             task.setClasspath(project.files().from(bootstrapExt.getBootModules()));
             task.getMainModule().set(bootstrapExt.getMainModule());
             task.getMainClass().unset();
-            task.getJvmArguments().convention(bootstrapExt.getJvmArgs().map(args -> Stream.concat(Stream.of("--add-modules", "ALL-DEFAULT", "--add-modules", "ALL-MODULE-PATH"), args.stream()).toList()));
+            task.getJvmArguments().set(bootstrapExt.getJvmArgs().map(args -> Stream.concat(Stream.of("--add-modules", "ALL-DEFAULT", "--add-modules", "ALL-MODULE-PATH"), args.stream()).toList()));
             task.getModularity().getInferModulePath().set(true);
 
             JavaPluginExtension javaExt = project.getExtensions().getByType(JavaPluginExtension.class);
