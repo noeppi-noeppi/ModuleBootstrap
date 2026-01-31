@@ -4,6 +4,7 @@ import bootstrap.jar.classloading.ClassTransformer;
 import bootstrap.jar.impl.JarModuleReference;
 import bootstrap.jar.impl.reflect.JavaBaseAccess;
 import bootstrap.jar.util.FlatteningEnumeration;
+import bootstrap.jar.util.NameHelper;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNullByDefault;
 import org.jetbrains.annotations.Nullable;
@@ -249,6 +250,7 @@ public class ModularClassLoader extends SecureClassLoader {
         @Nullable ResolvedModule module = this.moduleMap.get(moduleName);
         @Nullable String pkg = this.packageForResource(resource);
         if (module == null || pkg == null) return false;
+        if (!NameHelper.validTypeName(pkg)) return false;
         ModuleDescriptor descriptor = module.reference().descriptor();
         if (descriptor.isOpen() || descriptor.isAutomatic()) return false;
         return descriptor.opens().stream().noneMatch(opens -> !opens.isQualified() && Objects.equals(pkg, opens.source()));
