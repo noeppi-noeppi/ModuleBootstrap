@@ -1,6 +1,7 @@
 package bootstrap.launcher;
 
 import bootstrap.api.ModuleSystem;
+import bootstrap.jar.reflect.JavaBaseAccess;
 import bootstrap.jar.reflect.TrustedLookup;
 import org.jetbrains.annotations.NotNullByDefault;
 
@@ -42,6 +43,13 @@ public class ModuleSystemImpl implements ModuleSystem {
     @Override
     public void addExports(Module source, String pkg, Module target) {
         this.bootstrapController.addExports(source, pkg, target);
+    }
+
+    @Override
+    public void enableNativeAccess(Module target) {
+        // ModuleLayer.Controller#enableNativeAccess requires the caller to have native access. Therefore, we bypass that method.
+        if (target.getLayer() != this.layer()) throw new IllegalArgumentException(target + " not in layer");
+        JavaBaseAccess.get().enableNativeAccess(target);
     }
 
     // bootstrapController.addReads is purposely not exposed as it won't work with the classloader architecture anyway.

@@ -1,7 +1,7 @@
 package bootstrap.entrypoint;
 
-import bootstrap.spi.Entrypoint;
 import bootstrap.api.ModuleSystem;
+import bootstrap.spi.Entrypoint;
 import org.jetbrains.annotations.NotNullByDefault;
 
 /**

@@ -5,7 +5,10 @@ import org.jetbrains.annotations.NotNullByDefault;
 
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 

@@ -42,4 +42,9 @@ public interface ModuleSystem {
      * {@link ModuleLayer.Controller#addExports(Module, String, Module)}.
      */
     void addExports(Module source, String pkg, Module target);
+
+    /**
+     * Enables native access for module {@code target} in the {@link #layer() bootstrap layer}.
+     */
+    void enableNativeAccess(Module target);
 }

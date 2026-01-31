@@ -4,7 +4,7 @@ import bootstrap.jar.classloading.ClassDiscovery;
 import bootstrap.jar.classloading.ClassTransformer;
 import bootstrap.jar.classloading.ModuleLoaderPool;
 import bootstrap.jar.classloading.TransformingEnvironment;
-import bootstrap.jar.impl.reflect.JavaBaseAccess;
+import bootstrap.jar.reflect.JavaBaseAccess;
 import bootstrap.jar.url.classtransformer.ClassTransformerStreamHandler;
 import bootstrap.jar.util.NameHelper;
 import org.jetbrains.annotations.NotNullByDefault;
@@ -51,7 +51,7 @@ public class LoaderPoolImpl implements ModuleLoaderPool {
         try {
             Map<String, Set<ResolvedModule>> clusterMap = new HashMap<>();
             for (ResolvedModule module : this.configuration.modules()) {
-                clusterMap.computeIfAbsent(cluster.apply(module.name()), k -> new HashSet<>()).add(module);
+                clusterMap.computeIfAbsent(cluster.apply(module.name()), _ -> new HashSet<>()).add(module);
             }
             Map<String, ModuleContext> moduleMap = new HashMap<>();
             for (String clusterId : clusterMap.keySet()) {

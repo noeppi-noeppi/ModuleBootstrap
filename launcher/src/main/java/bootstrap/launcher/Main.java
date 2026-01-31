@@ -4,7 +4,7 @@ import bootstrap.api.LauncherConstants;
 import bootstrap.api.ModuleSystem;
 import bootstrap.jar.classloading.ClassTransformer;
 import bootstrap.jar.classloading.ModuleLoaderPool;
-import bootstrap.jar.reflect.TrustedLookup;
+import bootstrap.jar.reflect.JavaBaseAccess;
 import bootstrap.launcher.url.BootstrapStreamHandlerFactory;
 import bootstrap.spi.BootPlugin;
 import bootstrap.spi.Entrypoint;
@@ -34,7 +34,7 @@ public class Main {
             throw new Error("Wrong main module: " + Main.class.getModule().getName());
         }
 
-        TrustedLookup.get(); // verify that we can access the trusted lookup
+        JavaBaseAccess.get(); // verify that we can access the trusted lookup
 
         BootstrapStreamHandlerFactory streamHandlerFactory = new BootstrapStreamHandlerFactory(bootLayer);
         URL.setURLStreamHandlerFactory(streamHandlerFactory);

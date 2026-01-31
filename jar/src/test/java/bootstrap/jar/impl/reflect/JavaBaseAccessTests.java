@@ -1,9 +1,10 @@
 package bootstrap.jar.impl.reflect;
 
+import bootstrap.jar.reflect.JavaBaseAccess;
 import bootstrap.jar.reflect.TrustedLookup;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 public class JavaBaseAccessTests {
 

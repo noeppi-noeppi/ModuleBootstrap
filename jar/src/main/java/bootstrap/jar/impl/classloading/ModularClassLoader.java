@@ -2,7 +2,7 @@ package bootstrap.jar.impl.classloading;
 
 import bootstrap.jar.classloading.ClassTransformer;
 import bootstrap.jar.impl.JarModuleReference;
-import bootstrap.jar.impl.reflect.JavaBaseAccess;
+import bootstrap.jar.reflect.JavaBaseAccess;
 import bootstrap.jar.util.FlatteningEnumeration;
 import bootstrap.jar.util.NameHelper;
 import org.jetbrains.annotations.Contract;
