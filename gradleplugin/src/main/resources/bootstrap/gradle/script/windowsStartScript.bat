@@ -20,6 +20,6 @@ echo Please set the JAVA_HOME variable in your environment to a valid java insta
 goto die
 
 :launch
-"%JAVA_CMD%" --module-path @@@MODULE_PATH@@@ --add-modules ALL-DEFAULT --add-modules ALL-MODULE-PATH @@@JVM_ARGS@@@ "--module" @@@MAIN_MODULE@@@ "$@"
+"%JAVA_CMD%" --module-path @@@MODULE_PATH@@@ --add-modules ALL-DEFAULT --add-modules ALL-MODULE-PATH @@@JVM_ARGS@@@ "--module" @@@MAIN_MODULE@@@ %*
 if %ERRORLEVEL% neq 0 goto die
 endlocal

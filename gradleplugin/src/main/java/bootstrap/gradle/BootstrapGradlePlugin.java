@@ -88,6 +88,7 @@ public class BootstrapGradlePlugin implements Plugin<Project> {
             task.setGroup("distribution");
             task.dependsOn(jarTask);
             task.dependsOn(bootstrapExt.getDependencies());
+            task.getInputs().files(bootstrapClasspath);
             task.setOutputDir(project.getLayout().getBuildDirectory().dir(task.getName()).get().getAsFile());
             task.setClasspath(project.files().from(bootstrapExt.getBootModules()));
             task.getMainModule().set(bootstrapExt.getMainModule());
