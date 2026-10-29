@@ -78,7 +78,7 @@ public class UnionFileSystemProvider extends ReadOnlyFileSystemProvider {
     @Override
     public void unregisterFileSystem(FileSystem fs) {
         synchronized (this.lock) {
-            if (fs instanceof UnionFileSystem ufs) {
+            if (fs instanceof UnionFileSystem ufs && this.fileSystems.get(ufs.key()) == ufs) {
                 //noinspection resource
                 this.fileSystems.remove(ufs.key());
             }

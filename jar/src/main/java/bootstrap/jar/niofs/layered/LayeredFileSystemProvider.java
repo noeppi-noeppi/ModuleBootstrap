@@ -76,7 +76,7 @@ public class LayeredFileSystemProvider extends ReadOnlyFileSystemProvider {
     @Override
     public void unregisterFileSystem(FileSystem fs) {
         synchronized (this.lock) {
-            if (fs instanceof LayeredFileSystem lfs) {
+            if (fs instanceof LayeredFileSystem lfs && this.fileSystems.get(lfs.layers()) == lfs) {
                 //noinspection resource
                 this.fileSystems.remove(lfs.layers());
             }

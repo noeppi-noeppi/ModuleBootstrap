@@ -95,7 +95,7 @@ public class BasePath implements Path {
     @Override
     public @Nullable Path getParent() {
         if (this.pathParts.length > 1 || (this.absolute && this.pathParts.length == 1)) {
-            return new BasePath(this.fs, this.absolute, Arrays.copyOf(this.pathParts,this.pathParts.length - 1));
+            return new BasePath(this.fs, this.absolute, Arrays.copyOf(this.pathParts, this.pathParts.length - 1));
         } else {
             return null;
         }
@@ -108,7 +108,7 @@ public class BasePath implements Path {
 
     @Override
     public Path getName(int index) {
-        if (index < 0 || index > this.pathParts.length -1) throw new IllegalArgumentException();
+        if (index < 0 || index > this.pathParts.length - 1) throw new IllegalArgumentException();
         return new BasePath(this.fs, false, this.pathParts[index]);
     }
 
@@ -201,7 +201,7 @@ public class BasePath implements Path {
 
     @Override
     public Path relativize(Path other) {
-        if (other.getFileSystem()!=this.getFileSystem()) throw new IllegalArgumentException("Wrong filesystem");
+        if (other.getFileSystem() != this.getFileSystem()) throw new IllegalArgumentException("Wrong filesystem");
         if (other instanceof BasePath bp) {
             if (this.absolute != bp.absolute) {
                 throw new IllegalArgumentException("Different types of path");
@@ -219,7 +219,7 @@ public class BasePath implements Path {
             } else if (remaining == 0) {
                 return bp.subpath(i, bp.getNameCount());
             } else {
-                String[] updots = IntStream.range(0, remaining).mapToObj(idx -> "..").toArray(String[]::new);
+                String[] updots = IntStream.range(0, remaining).mapToObj(_ -> "..").toArray(String[]::new);
                 if (i == bp.pathParts.length) {
                     return new BasePath(this.getFileSystem(), false, updots);
                 } else {
