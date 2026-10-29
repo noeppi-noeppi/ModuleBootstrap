@@ -119,7 +119,6 @@ public class BootstrapScriptGenerator implements ScriptGenerator {
         } else {
             text = text.replace("\\", "\\\\");
             text = text.replace("\"", "\\\"");
-            text = text.replace("'", "'\"'\"'");
             text = text.replace("`", "'\"`\"'");
             text = text.replace("$", "\\$");
             return "\"" + text + "\"";
