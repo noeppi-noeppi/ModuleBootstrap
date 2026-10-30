@@ -186,20 +186,27 @@ public class LoaderPoolImpl implements ModuleLoaderPool {
         throw new ClassNotFoundException(className);
     }
 
-    public Class<?> loadParentClass(String moduleName, String className) throws ClassNotFoundException {
+    Class<?> loadExternalClass(ModularClassLoader requestor, String moduleName, String className) throws ClassNotFoundException {
         if (!NameHelper.validTypeName(moduleName) || !NameHelper.validLoadableClassName(className)) throw new ClassNotFoundException(className);
 
         int idx = className.lastIndexOf('.');
         if (idx < 0) throw new ClassNotFoundException(className);
         String pkg = className.substring(0, idx);
 
-        Module parentModule = this.findParentModule(moduleName);
-        if (parentModule == null || !parentModule.getPackages().contains(pkg)) {
-            throw new ClassNotFoundException(className);
+        if (this.moduleMap.containsKey(moduleName)) {
+            ModuleContext context = this.moduleMap.get(moduleName);
+            if (context.loader() == requestor || !context.module().reference().descriptor().packages().contains(pkg)) {
+                throw new ClassNotFoundException(className);
+            }
+            return context.loader().loadClassFromModule(moduleName, className, false);
+        } else {
+            Module parentModule = this.findParentModule(moduleName);
+            if (parentModule == null || !parentModule.getPackages().contains(pkg)) {
+                throw new ClassNotFoundException(className);
+            }
+            ClassLoader loader = Objects.requireNonNullElse(parentModule.getClassLoader(), ClassLoader.getPlatformClassLoader());
+            return loader.loadClass(className);
         }
-
-        ClassLoader loader = Objects.requireNonNullElse(parentModule.getClassLoader(), ClassLoader.getPlatformClassLoader());
-        return loader.loadClass(className);
     }
 
     public Optional<URL> findResource(String moduleName, String resource) throws IOException {

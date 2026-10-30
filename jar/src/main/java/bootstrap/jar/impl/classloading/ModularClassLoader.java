@@ -153,6 +153,14 @@ public class ModularClassLoader extends SecureClassLoader {
         }
     }
 
+    public final Class<?> loadClassFromModule(String moduleName, String className, boolean resolve) throws ClassNotFoundException {
+        int idx = className.lastIndexOf('.');
+        if (idx < 0 || !this.moduleMap.containsKey(moduleName) || !Objects.equals(moduleName, this.packageMap.get(className.substring(0, idx)))) {
+            throw new ClassNotFoundException(className);
+        }
+        return this.loadClass(className, resolve);
+    }
+
     protected Class<?> safeLoadClass(String name, boolean resolve) throws ClassNotFoundException {
         synchronized (this.getClassLoadingLock(name)) {
             Class<?> cls = this.findLoadedClass(name);
@@ -160,7 +168,7 @@ public class ModularClassLoader extends SecureClassLoader {
                 try {
                     cls = this.findClass(name);
                 } catch (ClassNotFoundException e) {
-                    cls = this.loadClassFromParentLayers(name);
+                    cls = this.loadExternalClass(name);
                 }
             }
             if (resolve) {
@@ -170,12 +178,12 @@ public class ModularClassLoader extends SecureClassLoader {
         }
     }
 
-    private Class<?> loadClassFromParentLayers(String className) throws ClassNotFoundException {
+    private Class<?> loadExternalClass(String className) throws ClassNotFoundException {
         int idx = className.lastIndexOf('.');
         @Nullable String pkg = idx < 0 ? null : className.substring(0, idx);
         if (pkg != null && this.packageMap.containsKey(pkg)) {
             try {
-                return this.pool.loadParentClass(this.packageMap.get(pkg), className);
+                return this.pool.loadExternalClass(this, this.packageMap.get(pkg), className);
             } catch (ClassNotFoundException e) {
                 //
             }
